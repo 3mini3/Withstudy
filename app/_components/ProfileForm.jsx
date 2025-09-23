@@ -21,9 +21,12 @@ export default function ProfileForm({ student }) {
     <main className="page profile-page">
       <section className="profile-card">
         <header className="profile-header">
-          <div>
+          <div className="profile-header-left">
             <h1>プロフィール設定</h1>
             <p>学年と得意教科を登録すると、学習履歴を正しく記録できます。</p>
+            <Link href="/profile/context" className="profile-context-link">
+              パーソナライズドドキュメントを編集
+            </Link>
           </div>
           <Link href="/" className="profile-skip">
             チャットへ戻る

@@ -157,6 +157,12 @@ main.page {
   gap: 1rem;
 }
 
+.profile-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .profile-header h1 {
   font-size: 1.8rem;
   color: #111827;
@@ -165,6 +171,21 @@ main.page {
 .profile-header p {
   margin-top: 0.35rem;
   color: #4b5563;
+}
+
+.profile-context-link {
+  align-self: flex-start;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  transition: background 0.2s ease;
+}
+
+.profile-context-link:hover {
+  background: rgba(37, 99, 235, 0.16);
 }
 
 .profile-skip {
@@ -213,6 +234,69 @@ main.page {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
+.context-editor {
+  gap: 1.5rem;
+}
+
+.context-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.secondary-button {
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  background: #ffffff;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.secondary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(79, 70, 229, 0.18);
+}
+
+.context-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.context-textarea {
+  width: 100%;
+  min-height: 360px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  padding: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  font-family: 'Courier New', Courier, monospace;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: #f8fafc;
+}
+
+.context-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #ffffff;
+}
+
+.profile-error {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.profile-success {
+  color: #059669;
+  font-weight: 600;
+}
+
 .profile-footer {
   position: sticky;
   bottom: 0;
@@ -237,11 +321,6 @@ main.page {
 .profile-footer button:hover {
   transform: translateY(-1px);
   box-shadow: 0 16px 28px rgba(79, 70, 229, 0.4);
-}
-
-.profile-error {
-  color: #dc2626;
-  font-weight: 600;
 }
 
 .required {

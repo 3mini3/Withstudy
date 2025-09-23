@@ -41,6 +41,14 @@ const SUBJECTS = [
   }
 ];
 
+const SUBJECT_LABELS = {
+  math: '数学',
+  science: '理科',
+  english: '英語',
+  'social-studies': '社会',
+  japanese: '国語'
+};
+
 const INITIAL_MESSAGES_BY_SUBJECT = SUBJECTS.reduce((acc, subject) => {
   acc[subject.id] = [
     {

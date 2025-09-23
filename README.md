@@ -44,4 +44,5 @@ A simple Next.js web app that lets students ask homework questions to an AI tuto
 - Subject chat history is maintained independently on the client, soタブを切り替えても会話がそのまま残ります。
 - Authentication handles registration/login with hashed passwords stored in PostgreSQL, and未入力のプロフィールがある場合は自動的に設定画面へリダイレクトします。
 - 生徒ごとのパーソナライズド文書を PostgreSQL (`student_context_documents`) に保存し、チャット時のコンテキストとして Groq に渡します。
+- プロフィール画面左上のリンクからパーソナライズド文書を直接編集でき、手動編集後も自動生成セクションが最新状態に追従します。
 - Update the UI or styling in `app/_components/ChatDashboard.jsx` and `app/globals.css`.
