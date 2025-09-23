@@ -35,6 +35,47 @@ main.page {
   gap: 1.5rem;
 }
 
+.tab-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+}
+
+.tab-button {
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: #f8fafc;
+  color: #1f2937;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.tab-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.18);
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 12px 24px rgba(79, 70, 229, 0.35);
+}
+
+.tab-button:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.subject-description {
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
 .chat-header h1 {
   font-size: 2rem;
   font-weight: 700;

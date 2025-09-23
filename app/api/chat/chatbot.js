@@ -1,11 +1,11 @@
 import Groq from 'groq-sdk';
 
 const DEFAULT_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
-const DEFAULT_SYSTEM_PROMPT =
+const BASE_SYSTEM_PROMPT =
   process.env.GROQ_SYSTEM_PROMPT ||
   'You are a patient and encouraging homework tutor. Provide clear, step-by-step explanations. If unsure, say so and suggest how the student can verify.';
 
-export async function generateTutorReply({ prompt, history = [] }) {
+export async function generateTutorReply({ prompt, history = [], context }) {
   const trimmedPrompt = prompt?.trim();
 
   if (!trimmedPrompt) {
@@ -31,8 +31,12 @@ export async function generateTutorReply({ prompt, history = [] }) {
         .map(({ role, content }) => ({ role, content }))
     : [];
 
+  const systemPrompt = context
+    ? `${BASE_SYSTEM_PROMPT}\n\n${context.trim()}`
+    : BASE_SYSTEM_PROMPT;
+
   const messages = [
-    { role: 'system', content: DEFAULT_SYSTEM_PROMPT },
+    { role: 'system', content: systemPrompt },
     ...normalizedHistory,
     { role: 'user', content: trimmedPrompt }
   ];

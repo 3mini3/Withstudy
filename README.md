@@ -29,6 +29,7 @@ A simple Next.js web app that lets students ask homework questions to an AI tuto
 
 ## Notes
 
-- The Groq API is called from a server-side route (`/api/chat`).
-- Chat history is held on the client side so the conversation stays visible while you continue asking questions.
+- 5人のチューター（数学 / 理科 / 英語 / 社会 / 国語）をタブで切り替えられます。各チューターには専用コンテキストが設定され、教科に合わせた回答を行います。
+- The Groq API is called from a server-side route (`/api/chat`) that enriches each request with the selected subject context before passing it to Groq via the official SDK.
+- Subject chat history is maintained independently on the client, soタブを切り替えても会話がそのまま残ります。
 - Update the UI or styling in `app/page.js` and `app/globals.css`.

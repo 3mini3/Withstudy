@@ -10,14 +10,14 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Invalid JSON payload.' }, { status: 400 });
   }
 
-  const { prompt, history = [] } = payload || {};
+  const { prompt, history = [], context } = payload || {};
 
   if (typeof prompt !== 'string' || !prompt.trim()) {
     return NextResponse.json({ error: 'Provide a prompt for the tutor.' }, { status: 400 });
   }
 
   try {
-    const reply = await generateTutorReply({ prompt, history });
+    const reply = await generateTutorReply({ prompt, history, context });
 
     if (!reply) {
       return NextResponse.json(
