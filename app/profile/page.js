@@ -1,9 +1,13 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import ChatDashboard from './_components/ChatDashboard';
-import prisma from '../lib/prisma';
+import prisma from '../../lib/prisma';
+import ProfileForm from '../_components/ProfileForm';
 
-export default async function HomePage() {
+export const metadata = {
+  title: 'プロフィール設定 | Withstady Tutor'
+};
+
+export default async function ProfilePage() {
   const sessionCookie = cookies().get('withstady-session');
 
   if (!sessionCookie?.value) {
@@ -17,7 +21,7 @@ export default async function HomePage() {
       email = parsed.email.trim().toLowerCase();
     }
   } catch (error) {
-    console.error('Failed to parse session cookie', error);
+    // Ignore parsing error and fall through to redirect.
   }
 
   if (!email) {
@@ -30,10 +34,6 @@ export default async function HomePage() {
     redirect('/login');
   }
 
-  if (!student.grade || !student.favoriteSubject) {
-    redirect('/profile');
-  }
-
   const clientStudent = {
     email: student.email,
     grade: student.grade,
@@ -41,5 +41,5 @@ export default async function HomePage() {
     mockExamScore: student.mockExamScore
   };
 
-  return <ChatDashboard student={clientStudent} />;
+  return <ProfileForm student={clientStudent} />;
 }

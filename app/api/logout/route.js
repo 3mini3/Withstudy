@@ -6,7 +6,9 @@ export async function POST() {
     name: 'withstady-session',
     value: '',
     path: '/',
-    maxAge: 0
+    maxAge: 0,
+    httpOnly: true,
+    sameSite: 'lax'
   });
   return response;
 }

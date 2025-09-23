@@ -49,5 +49,10 @@ export async function generateTutorReply({ prompt, history = [], context }) {
     stream: false
   });
 
-  return completion?.choices?.[0]?.message?.content?.trim() || '';
+  const messageContent = completion?.choices?.[0]?.message?.content?.trim() || '';
+
+  return {
+    message: messageContent,
+    usage: completion?.usage || null
+  };
 }

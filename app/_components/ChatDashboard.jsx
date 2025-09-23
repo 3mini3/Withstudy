@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 const SUBJECTS = [
@@ -52,7 +53,19 @@ const INITIAL_MESSAGES_BY_SUBJECT = SUBJECTS.reduce((acc, subject) => {
 
 const INITIAL_ASSISTANT_INDEX = 0;
 
-export default function ChatDashboard({ username }) {
+function buildStudentLabel(student) {
+  if (!student?.email) return '学習者';
+  const email = student.email;
+  const [localPart] = email.split('@');
+  return localPart || email;
+}
+
+function buildStudentInitial(student) {
+  const label = buildStudentLabel(student);
+  return label.charAt(0).toUpperCase();
+}
+
+export default function ChatDashboard({ student }) {
   const [messagesBySubject, setMessagesBySubject] = useState(INITIAL_MESSAGES_BY_SUBJECT);
   const [activeSubjectId, setActiveSubjectId] = useState(SUBJECTS[0].id);
   const [input, setInput] = useState('');
@@ -107,7 +120,12 @@ export default function ChatDashboard({ username }) {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, history, context: activeSubject.context })
+        body: JSON.stringify({
+          prompt,
+          history,
+          context: activeSubject.context,
+          subject: activeSubject.id
+        })
       });
 
       const data = await response.json();
@@ -147,10 +165,18 @@ export default function ChatDashboard({ username }) {
               <p>5教科のタブを切り替えて、それぞれの専門チューターに質問しましょう。</p>
             </div>
             <div className="user-chip">
-              <span className="user-name">{username}</span>
-              <button type="button" onClick={handleLogout} className="logout-button">
-                ログアウト
-              </button>
+              <div className="user-meta">
+                <span className="user-name">{buildStudentLabel(student)}</span>
+                <span className="user-grade">中学{student.grade}年生</span>
+              </div>
+              <div className="user-actions">
+                <Link href="/profile" className="account-button" aria-label="プロフィールを編集">
+                  <span aria-hidden>{buildStudentInitial(student)}</span>
+                </Link>
+                <button type="button" onClick={handleLogout} className="logout-button">
+                  ログアウト
+                </button>
+              </div>
             </div>
           </div>
         </header>

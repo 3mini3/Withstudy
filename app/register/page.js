@@ -1,12 +1,12 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import LoginForm from '../_components/LoginForm';
+import RegisterForm from '../_components/RegisterForm';
 
 export const metadata = {
-  title: 'ログイン | Withstady Tutor'
+  title: '新規登録 | Withstady Tutor'
 };
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const sessionCookie = cookies().get('withstady-session');
 
   if (sessionCookie?.value) {
@@ -16,9 +16,9 @@ export default function LoginPage() {
         redirect('/');
       }
     } catch (error) {
-      // Ignore parse errors and continue showing the login form.
+      // Ignore parse errors and continue showing the register form.
     }
   }
 
-  return <LoginForm />;
+  return <RegisterForm />;
 }

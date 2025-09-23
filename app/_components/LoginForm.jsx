@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useFormState } from 'react-dom';
 import { loginAction } from '../_actions/authenticate';
 
@@ -12,10 +13,10 @@ export default function LoginForm() {
     <main className="page auth-page">
       <section className="auth-card">
         <h1>Withstady ログイン</h1>
-        <p className="auth-subtitle">登録済みのユーザー名とパスワードでサインインしてください。</p>
+        <p className="auth-subtitle">登録済みのメールアドレスとパスワードを入力してください。</p>
         <form action={formAction} className="auth-form">
-          <label htmlFor="username">ユーザー名</label>
-          <input id="username" name="username" type="text" autoComplete="username" required />
+          <label htmlFor="email">メールアドレス</label>
+          <input id="email" name="email" type="email" autoComplete="email" required />
 
           <label htmlFor="password">パスワード</label>
           <input id="password" name="password" type="password" autoComplete="current-password" required />
@@ -24,6 +25,11 @@ export default function LoginForm() {
 
           <button type="submit">ログイン</button>
         </form>
+        <p className="auth-footnote">
+          アカウントをお持ちでない場合は{' '}
+          <Link href="/register">新規登録</Link>
+          へ進んでください。
+        </p>
       </section>
     </main>
   );
