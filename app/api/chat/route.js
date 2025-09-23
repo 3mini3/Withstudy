@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/prisma';
+import { ensureStudentContextDocument } from '../../../lib/studentContext';
 import { generateTutorReply } from './chatbot';
 
 const SUBJECT_OPTIONS = new Set(['math', 'science', 'english', 'social-studies', 'japanese']);
@@ -43,11 +44,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 
-  const student = await prisma.student.findUnique({ where: { email } });
+  const student = await prisma.student.findUnique({
+    where: { email },
+    include: { contextDocument: true }
+  });
 
   if (!student) {
     return NextResponse.json({ error: 'Student not found.' }, { status: 401 });
   }
+
+  const personalizedContext = await ensureStudentContextDocument(student);
 
   const now = new Date();
   const startOfDay = new Date(now);
@@ -116,7 +122,13 @@ export async function POST(request) {
   });
 
   try {
-    const { message: reply, usage } = await generateTutorReply({ prompt, history, context });
+    const combinedContext = [personalizedContext, context].filter(Boolean).join('\n\n');
+
+    const { message: reply, usage } = await generateTutorReply({
+      prompt,
+      history,
+      context: combinedContext
+    });
 
     if (!reply) {
       return NextResponse.json(

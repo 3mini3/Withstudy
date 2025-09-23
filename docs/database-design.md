@@ -10,6 +10,7 @@
 | `chat_sessions` | 1 回の学習セッション（タブ＝教科別） | セッションID、教科、開始/終了時刻、メモ |
 | `chat_messages` | チャットの各メッセージ（ユーザー / チューター） | メッセージ内容、役割、トークン数 |
 | `daily_student_metrics` | 日次×教科ごとの集計値 | 学習日、教科、メッセージ数、セッション数、合計時間 |
+| `student_context_documents` | AI へ渡すパーソナライズドコンテキスト | 自己紹介ドキュメント、生成区分 |
 
 今後スコアや質問カテゴリを拡張する際は、`student_subject_scores` や `message_topics` テーブルの追加で対応できます。
 
@@ -75,6 +76,15 @@ CREATE TABLE daily_student_metrics (
   total_duration_seconds INTEGER NOT NULL DEFAULT 0,
   last_calculated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (student_email, subject, summary_date)
+);
+
+-- 学習者ごとのパーソナライズドドキュメント
+CREATE TABLE student_context_documents (
+  student_email          TEXT PRIMARY KEY REFERENCES students(email) ON DELETE CASCADE,
+  content                TEXT NOT NULL,
+  is_auto_generated      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 
@@ -176,6 +186,7 @@ GROUP BY student_email, subject, date_trunc('month', summary_date);
 - **チャット記録**: `/api/chat` を呼び出す直前に `chat_sessions` を生成し、レスポンスを受け取ったタイミングで `chat_messages` にユーザー・チューター両方の発話を INSERT します。
 - **セッション終了**: フロント側でタブ切り替えやページ離脱時に `ended_at` を更新し、利用時間を算出できるようにします。
 - **日次集計バッチ**: cron (例: `node-cron`), サーバーレスのスケジューラー、あるいは Postgres の `pg_cron` を使って毎日集計を回す運用を想定しています。
+- **パーソナライズドドキュメント**: 学年・得意教科・模試スコアから自動生成した紹介テキストを `student_context_documents` に保存し、Groq のシステムコンテキストとして利用します。ユーザーが手動編集した場合は `is_auto_generated=false` にすることで自動再生成を抑止できます。
 
 ## 5. 将来の拡張ポイント
 

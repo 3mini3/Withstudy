@@ -43,4 +43,5 @@ A simple Next.js web app that lets students ask homework questions to an AI tuto
 - The Groq API is called from a server-side route (`/api/chat`) that enriches each request with the selected subject context before passing it to Groq via the official SDK.
 - Subject chat history is maintained independently on the client, soタブを切り替えても会話がそのまま残ります。
 - Authentication handles registration/login with hashed passwords stored in PostgreSQL, and未入力のプロフィールがある場合は自動的に設定画面へリダイレクトします。
+- 生徒ごとのパーソナライズド文書を PostgreSQL (`student_context_documents`) に保存し、チャット時のコンテキストとして Groq に渡します。
 - Update the UI or styling in `app/_components/ChatDashboard.jsx` and `app/globals.css`.

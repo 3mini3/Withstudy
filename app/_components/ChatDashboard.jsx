@@ -65,6 +65,14 @@ function buildStudentInitial(student) {
   return label.charAt(0).toUpperCase();
 }
 
+const SUBJECT_LABELS = {
+  math: '数学',
+  science: '理科',
+  english: '英語',
+  'social-studies': '社会',
+  japanese: '国語'
+};
+
 export default function ChatDashboard({ student }) {
   const [messagesBySubject, setMessagesBySubject] = useState(INITIAL_MESSAGES_BY_SUBJECT);
   const [activeSubjectId, setActiveSubjectId] = useState(SUBJECTS[0].id);
@@ -167,7 +175,9 @@ export default function ChatDashboard({ student }) {
             <div className="user-chip">
               <div className="user-meta">
                 <span className="user-name">{buildStudentLabel(student)}</span>
-                <span className="user-grade">中学{student.grade}年生</span>
+                <span className="user-grade">
+                  中学{student.grade}年生 ・ {SUBJECT_LABELS[student.favoriteSubject] || '得意教科未設定'}
+                </span>
               </div>
               <div className="user-actions">
                 <Link href="/profile" className="account-button" aria-label="プロフィールを編集">

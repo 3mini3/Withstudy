@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import prisma from '../../lib/prisma';
+import { ensureStudentContextDocument } from '../../lib/studentContext';
 
 const SUBJECT_OPTIONS = new Set(['math', 'science', 'english', 'social-studies', 'japanese']);
 
@@ -91,6 +92,8 @@ export async function loginAction(prevState, formData) {
     redirect('/profile');
   }
 
+  await ensureStudentContextDocument(student);
+
   redirect('/');
 }
 
@@ -146,6 +149,13 @@ export async function updateProfileAction(prevState, formData) {
       mockExamScore
     }
   });
+
+  const updatedStudent = await prisma.student.findUnique({
+    where: { email },
+    include: { contextDocument: true }
+  });
+
+  await ensureStudentContextDocument(updatedStudent);
 
   redirect('/');
 }
