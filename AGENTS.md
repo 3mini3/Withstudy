@@ -19,6 +19,7 @@
 - Keep components in PascalCase, hooks/utilities in camelCase, and Prisma models singular TitleCase.
 - Place `'use client';` directives at the top of client modules; keep server routes free of browser-only APIs.
 - Extend shared styles through `app/globals.css`; introduce CSS modules when component-level scoping is needed.
+- 定義不足な部分は逐一質問するように。
 
 ## Testing Guidelines
 - No automated suite exists yet; manually exercise registration, login, subject switching, and context editing before merging.
