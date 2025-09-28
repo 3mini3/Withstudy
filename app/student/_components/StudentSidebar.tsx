@@ -1,74 +1,52 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+
 import StudentNav from './StudentNav';
 
 interface StudentSidebarProps {
   email: string;
 }
 
-const MOBILE_BREAKPOINT = 1024;
-
 export default function StudentSidebar({ email }: StudentSidebarProps) {
-  const [isOpen, setIsOpen] = useState(true);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
-
-    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
-      const matches = 'matches' in event ? event.matches : event.currentTarget?.matches ?? false;
-      setIsOpen(!matches);
-    };
-
-    handleChange(mediaQuery);
-
-    const listener = (event: MediaQueryListEvent) => handleChange(event);
-
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', listener);
-      return () => {
-        mediaQuery.removeEventListener('change', listener);
-      };
-    }
-
-    mediaQuery.addListener(listener);
-    return () => {
-      mediaQuery.removeListener(listener);
-    };
-  }, []);
-
-  const handleToggle = () => {
-    setIsOpen((prev) => !prev);
-  };
+  const [open, setOpen] = useState(false);
 
   return (
     <>
-      <button
-        type="button"
-        className={`sidebar-fab${isOpen ? ' open' : ''}`}
-        aria-label={isOpen ? 'メニューを折りたたむ' : 'メニューを開く'}
-        aria-expanded={isOpen}
-        onClick={handleToggle}
-      >
-        {isOpen ? '閉じる' : 'メニュー'}
-      </button>
-      <aside className={`student-sidebar ${isOpen ? 'open' : 'collapsed'}`} aria-label="学習メニュー">
-        <div className="sidebar-controls">
-          <button
-            type="button"
-            className="sidebar-toggle"
-            aria-label={isOpen ? 'サイドバーを折りたたむ' : 'サイドバーを開く'}
-            aria-expanded={isOpen}
-            onClick={handleToggle}
-          >
-            {isOpen ? '◀' : '▶'}
-          </button>
+      <div className="sticky top-0 z-40 flex w-full items-center justify-between border-b bg-background/80 px-4 py-3 backdrop-blur lg:hidden">
+        <p className="text-base font-semibold text-foreground">Withstady</p>
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm">
+              メニュー
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="flex w-72 flex-col gap-6 p-6">
+            <SheetHeader>
+              <SheetTitle>学習メニュー</SheetTitle>
+            </SheetHeader>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground">Withstady</p>
+              <p className="text-sm text-muted-foreground">
+                学習を見える化しながら AI チューターと学び続けましょう。
+              </p>
+            </div>
+            <StudentNav email={email} onNavigate={() => setOpen(false)} />
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      <aside className="sticky top-0 hidden h-screen w-72 flex-col border-r bg-background/95 px-6 py-8 backdrop-blur lg:flex">
+        <div className="space-y-2">
+          <p className="text-lg font-semibold text-foreground">Withstady</p>
+          <p className="text-sm text-muted-foreground">
+            学習を見える化しながら AI チューターと学び続けましょう。
+          </p>
         </div>
-        <div className="student-sidebar-inner">
-          <div className="student-sidebar-top">
-            <h1 className="student-logo">Withstady</h1>
-            <p className="student-tagline">学習を見える化しながら AI チューターと学び続けましょう。</p>
-          </div>
+        <div className="mt-8 flex flex-1 flex-col">
           <StudentNav email={email} />
         </div>
       </aside>

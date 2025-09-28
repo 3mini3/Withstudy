@@ -1,8 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import type { SubjectId } from '../../lib/studentContext';
-import { getSubjectConfig, SUBJECT_CONFIGS, type SubjectConfig } from '../../lib/subjects';
+
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+import type { SubjectId } from '@/lib/studentContext';
+import { getSubjectConfig, SUBJECT_CONFIGS, type SubjectConfig } from '@/lib/subjects';
 
 interface ChatMessage {
   role: ChatMessageRole;
@@ -70,9 +82,7 @@ export default function ChatDashboard({ student: _student, subjectId }: ChatDash
       .filter((message, index) => !(index === 0 && message.role === 'assistant'))
       .map(({ role, content }) => ({ role, content }));
 
-    const nextMessages = [...messages, userMessage];
-
-    setMessages(nextMessages);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setError('');
     setIsLoading(true);
@@ -104,35 +114,39 @@ export default function ChatDashboard({ student: _student, subjectId }: ChatDash
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Something went wrong.');
-      setMessages(messages);
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <section className="chat-panel">
-      <header className="chat-header">
-        <div>
-          <h1>{subjectConfig.label} チューター</h1>
-          <p>{subjectConfig.description}</p>
+    <Card className="h-full w-full">
+      <CardHeader className="border-b bg-muted/40">
+        <CardTitle>{subjectConfig.label} チューター</CardTitle>
+        <CardDescription>{subjectConfig.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4 py-6">
+        <div className="flex-1 space-y-3 overflow-y-auto rounded-lg border bg-muted/30 p-4">
+          {messages.map((message, index) => (
+            <div
+              key={`${message.role}-${index}`}
+              className={cn(
+                'max-w-[80%] rounded-xl px-4 py-3 text-sm shadow-sm',
+                message.role === 'assistant'
+                  ? 'bg-card text-card-foreground'
+                  : 'ml-auto bg-primary text-primary-foreground'
+              )}
+            >
+              {message.content}
+            </div>
+          ))}
         </div>
-      </header>
-
-      <div className="chat-history" role="log" aria-live="polite">
-        {messages.map((message, index) => (
-          <article key={`${message.role}-${index}`} className={`chat-bubble ${message.role}`}>
-            <p>{message.content}</p>
-          </article>
-        ))}
-      </div>
-
-      <form className="chat-form" onSubmit={handleSubmit}>
-        <label className="chat-label" htmlFor="chat-prompt">
-          {subjectConfig.label}の質問を入力
-        </label>
-        <div className="chat-controls">
-          <textarea
+        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+      </CardContent>
+      <CardFooter className="border-t bg-muted/40 p-4">
+        <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
+          <Textarea
             id="chat-prompt"
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -140,12 +154,13 @@ export default function ChatDashboard({ student: _student, subjectId }: ChatDash
             rows={3}
             disabled={isLoading}
           />
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? '送信中…' : '送信'}
-          </button>
-        </div>
-        {error ? <p className="chat-error">{error}</p> : null}
-      </form>
-    </section>
+          <div className="flex items-center justify-end gap-2">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? '送信中…' : '送信'}
+            </Button>
+          </div>
+        </form>
+      </CardFooter>
+    </Card>
   );
 }

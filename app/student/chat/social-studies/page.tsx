@@ -7,9 +7,5 @@ const SUBJECT_ID: SubjectId = 'social-studies';
 export default async function SocialStudiesChatPage() {
   const student = await loadClientStudent();
 
-  return (
-    <div className="student-chat-wrapper">
-      <ChatDashboard student={student} subjectId={SUBJECT_ID} />
-    </div>
-  );
+  return <ChatDashboard student={student} subjectId={SUBJECT_ID} />;
 }

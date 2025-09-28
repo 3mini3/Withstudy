@@ -1,6 +1,7 @@
-import type { SubjectId } from '../../../lib/studentContext';
-import { SUBJECT_LABELS } from '../../../lib/studentContext';
-import prisma from '../../../lib/prisma';
+import type { SubjectId } from '@/lib/studentContext';
+import { SUBJECT_LABELS } from '@/lib/studentContext';
+import prisma from '@/lib/prisma';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -120,92 +121,136 @@ export default async function StudentDashboardPage() {
 
   const lastUpdated = dailyMetrics[0]?.summaryDate ?? null;
 
+  const metricCards = [
+    {
+      title: 'セッション数',
+      value: totals.sessions.toLocaleString('ja-JP'),
+      description: '直近7日間に開いた学習セッション'
+    },
+    {
+      title: 'ユーザー発話',
+      value: totals.userMessages.toLocaleString('ja-JP'),
+      description: 'あなたが送信したメッセージ数'
+    },
+    {
+      title: 'チューター発話',
+      value: totals.assistantMessages.toLocaleString('ja-JP'),
+      description: 'AI チューターからの回答数'
+    },
+    {
+      title: '学習時間',
+      value: `${Math.round(totals.durationSeconds / 60).toLocaleString('ja-JP')}分`,
+      description: 'セッション継続時間の概算'
+    }
+  ];
+
   return (
-    <section className="student-dashboard">
-      <header className="student-dashboard-hero">
-        <div>
-          <h2>学習ダッシュボード</h2>
-          <p>
+    <section className="flex flex-col gap-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>学習ダッシュボード</CardTitle>
+          <CardDescription>
             直近7日間の進捗を確認し、チャットでの学習状況を振り返りましょう。
-            {lastUpdated ? ` 最新記録: ${lastUpdated.toLocaleDateString('ja-JP')}` : ''}
-          </p>
-        </div>
-      </header>
+            {lastUpdated ? ` 最終更新: ${lastUpdated.toLocaleDateString('ja-JP')}` : ''}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {metricCards.map((card) => (
+            <div key={card.title} className="rounded-lg border bg-card p-4 shadow-sm">
+              <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{card.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
-      <section className="student-metrics-grid" aria-label="学習サマリー">
-        <article className="metric-card">
-          <h3>セッション数</h3>
-          <p className="metric-card-value">{totals.sessions}</p>
-          <p className="metric-card-caption">直近7日間に開いた学習セッション</p>
-        </article>
-        <article className="metric-card">
-          <h3>ユーザー発話</h3>
-          <p className="metric-card-value">{totals.userMessages}</p>
-          <p className="metric-card-caption">あなたが送信したメッセージ数</p>
-        </article>
-        <article className="metric-card">
-          <h3>チューター発話</h3>
-          <p className="metric-card-value">{totals.assistantMessages}</p>
-          <p className="metric-card-caption">AI チューターからの回答数</p>
-        </article>
-        <article className="metric-card">
-          <h3>学習時間</h3>
-          <p className="metric-card-value">{Math.round(totals.durationSeconds / 60)}分</p>
-          <p className="metric-card-caption">セッション継続時間の概算</p>
-        </article>
-      </section>
+      <Card aria-label="教科別サマリー">
+        <CardHeader>
+          <CardTitle>教科別の進捗</CardTitle>
+          <CardDescription>各教科で蓄積されたセッションやメッセージ数を確認できます。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {subjectSummaries.length === 0 ? (
+            <p className="rounded-md border border-dashed px-4 py-6 text-sm text-muted-foreground">
+              まだ学習記録がありません。チャットを開始して記録を作りましょう。
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-border text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-left font-semibold text-muted-foreground">
+                      教科
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right font-semibold text-muted-foreground">
+                      セッション
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right font-semibold text-muted-foreground">
+                      ユーザー発話
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right font-semibold text-muted-foreground">
+                      チューター発話
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right font-semibold text-muted-foreground">
+                      推定トークン
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right font-semibold text-muted-foreground">
+                      学習時間 (分)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {subjectSummaries.map((summary) => (
+                    <tr key={summary.subject} className="hover:bg-muted/30">
+                      <th scope="row" className="px-4 py-3 text-left font-medium text-foreground">
+                        {summary.label}
+                      </th>
+                      <td className="px-4 py-3 text-right">{summary.sessions.toLocaleString('ja-JP')}</td>
+                      <td className="px-4 py-3 text-right">{summary.userMessages.toLocaleString('ja-JP')}</td>
+                      <td className="px-4 py-3 text-right">{summary.assistantMessages.toLocaleString('ja-JP')}</td>
+                      <td className="px-4 py-3 text-right">{summary.totalTokens.toLocaleString('ja-JP')}</td>
+                      <td className="px-4 py-3 text-right">{summary.totalDurationMinutes.toLocaleString('ja-JP')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <section className="student-subject-table" aria-label="教科別サマリー">
-        <h3>教科別の進捗</h3>
-        {subjectSummaries.length === 0 ? (
-          <p className="empty-state">まだ学習記録がありません。チャットを開始して記録を作りましょう。</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">教科</th>
-                <th scope="col">セッション</th>
-                <th scope="col">ユーザー発話</th>
-                <th scope="col">チューター発話</th>
-                <th scope="col">推定トークン</th>
-                <th scope="col">学習時間 (分)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subjectSummaries.map((summary) => (
-                <tr key={summary.subject}>
-                  <th scope="row">{summary.label}</th>
-                  <td>{summary.sessions}</td>
-                  <td>{summary.userMessages}</td>
-                  <td>{summary.assistantMessages}</td>
-                  <td>{summary.totalTokens}</td>
-                  <td>{summary.totalDurationMinutes}</td>
-                </tr>
+      <Card aria-label="最近の学習セッション">
+        <CardHeader>
+          <CardTitle>最近のセッション</CardTitle>
+          <CardDescription>直近で実施したセッションの履歴です。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {recentSessions.length === 0 ? (
+            <p className="rounded-md border border-dashed px-4 py-6 text-sm text-muted-foreground">
+              まだ記録がありません。チャットを始めて最初のセッションを作成しましょう。
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {recentSessions.map((session) => (
+                <li
+                  key={session.id}
+                  className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 text-sm shadow-sm"
+                >
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      {SUBJECT_LABELS[session.subject as SubjectId] ?? session.subject}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatter.format(session.startedAt)} ・ {session._count.messages} メッセージ
+                    </p>
+                  </div>
+                </li>
               ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      <section className="student-recent-sessions" aria-label="最近の学習セッション">
-        <h3>最近のセッション</h3>
-        {recentSessions.length === 0 ? (
-          <p className="empty-state">まだ記録がありません。チャットを始めて最初のセッションを作成しましょう。</p>
-        ) : (
-          <ul>
-            {recentSessions.map((session) => (
-              <li key={session.id}>
-                <div>
-                  <p className="session-title">{SUBJECT_LABELS[session.subject as SubjectId] ?? session.subject}</p>
-                  <p className="session-meta">
-                    {formatter.format(session.startedAt)} ・ {session._count.messages} メッセージ
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }

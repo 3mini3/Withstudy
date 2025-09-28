@@ -7,9 +7,5 @@ const SUBJECT_ID: SubjectId = 'math';
 export default async function MathChatPage() {
   const student = await loadClientStudent();
 
-  return (
-    <div className="student-chat-wrapper">
-      <ChatDashboard student={student} subjectId={SUBJECT_ID} />
-    </div>
-  );
+  return <ChatDashboard student={student} subjectId={SUBJECT_ID} />;
 }

@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
 const NAV_ITEMS = [
   { href: '/student/dashboard', label: 'ダッシュボード' },
   { href: '/student/chat/math', label: '数学' },
@@ -15,11 +18,16 @@ const NAV_ITEMS = [
 
 interface StudentNavProps {
   email: string;
+  onNavigate?: () => void;
 }
 
-export default function StudentNav({ email }: StudentNavProps) {
+export default function StudentNav({ email, onNavigate }: StudentNavProps) {
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleNavigate = () => {
+    onNavigate?.();
+  };
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -34,15 +42,19 @@ export default function StudentNav({ email }: StudentNavProps) {
   };
 
   return (
-    <div className="student-sidebar-content">
-      <nav className="student-nav" aria-label="学習メニュー">
+    <div className="flex flex-1 flex-col justify-between gap-10">
+      <nav className="space-y-1" aria-label="学習メニュー">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname?.startsWith(item.href);
+          const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={isActive ? 'student-nav-item active' : 'student-nav-item'}
+              onClick={handleNavigate}
+              className={cn(
+                'flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary',
+                isActive ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'text-muted-foreground'
+              )}
             >
               {item.label}
             </Link>
@@ -50,19 +62,26 @@ export default function StudentNav({ email }: StudentNavProps) {
         })}
       </nav>
 
-      <div className="student-account" aria-label="アカウント操作">
-        <p className="student-account-email">{email}</p>
-        <Link href="/profile" className="student-account-link">
-          プロフィールを編集
-        </Link>
-        <button
-          type="button"
-          className="student-account-logout"
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-        >
-          {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
-        </button>
+      <div className="space-y-3 rounded-lg border bg-card p-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ログイン中</p>
+          <p className="truncate text-sm font-medium text-foreground">{email}</p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/profile" onClick={handleNavigate}>
+              プロフィールを編集
+            </Link>
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
+          </Button>
+        </div>
       </div>
     </div>
   );
