@@ -14,7 +14,7 @@ export default function RegisterPage() {
     try {
       const parsed = JSON.parse(sessionCookie.value) as { email?: unknown };
       if (typeof parsed?.email === 'string' && parsed.email.trim()) {
-        redirect('/');
+        redirect('/student/dashboard');
       }
     } catch (error) {
       // Ignore parse errors and continue showing the register form.

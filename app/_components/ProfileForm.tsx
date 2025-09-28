@@ -36,7 +36,7 @@ export default function ProfileForm({ student }: ProfileFormProps) {
               パーソナライズドドキュメントを編集
             </Link>
           </div>
-          <Link href="/" className="profile-skip">
+          <Link href="/student/chat" className="profile-skip">
             チャットへ戻る
           </Link>
         </header>

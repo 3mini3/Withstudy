@@ -1,134 +1,63 @@
 'use client';
 
-import Link from 'next/link';
-import type { FormEvent } from 'react';
-import { useMemo, useState } from 'react';
-import { SUBJECT_LABELS, type SubjectId } from '../../lib/studentContext';
-
-interface StudentProfile {
-  email: string;
-  grade: number | null;
-  favoriteSubject: string | null;
-  mockExamScore: number | null;
-}
-
-interface SubjectConfig {
-  id: SubjectId;
-  label: string;
-  description: string;
-  context: string;
-}
-
-type ChatMessageRole = 'assistant' | 'user';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import type { SubjectId } from '../../lib/studentContext';
+import { getSubjectConfig, SUBJECT_CONFIGS, type SubjectConfig } from '../../lib/subjects';
 
 interface ChatMessage {
   role: ChatMessageRole;
   content: string;
 }
 
+type ChatMessageRole = 'assistant' | 'user';
+
 interface ChatApiResponse {
   message?: string;
   error?: string;
 }
 
-const SUBJECTS: SubjectConfig[] = [
-  {
-    id: 'math',
-    label: '数学',
-    description: '計算、方程式、図形、データの読み取りなどの質問に対応します。',
-    context:
-      'You are a supportive middle-school math tutor. Use clear, step-by-step reasoning, show intermediary calculations, and connect ideas to real-world contexts when helpful.'
-  },
-  {
-    id: 'science',
-    label: '理科',
-    description: '生物・化学・物理・地学の基礎をわかりやすく説明します。',
-    context:
-      'You are a friendly middle-school science tutor. Explain scientific concepts with everyday examples, encourage curiosity, and highlight key vocabulary students should remember.'
-  },
-  {
-    id: 'english',
-    label: '英語',
-    description: '英文法や読解、スピーキング練習のヒントを伝えます。',
-    context:
-      'You are an encouraging English tutor for Japanese middle-school students. Provide simple explanations, sample sentences, and pronunciation tips when helpful.'
-  },
-  {
-    id: 'social-studies',
-    label: '社会',
-    description: '地理・歴史・公民のポイントを整理して伝えます。',
-    context:
-      'You are a knowledgeable social studies tutor. Summarize historical events, geography facts, and civics concepts clearly. Encourage students to think about causes and effects.'
-  },
-  {
-    id: 'japanese',
-    label: '国語',
-    description: '文章読解や作文、漢字のコツを教えます。',
-    context:
-      'You are a thoughtful Japanese language tutor. Help students analyze passages, interpret kanji, and improve composition skills with structured guidance.'
-  }
-];
-
-const INITIAL_ASSISTANT_INDEX = 0;
-
-function createInitialMessages(): Record<SubjectId, ChatMessage[]> {
-  return SUBJECTS.reduce<Record<SubjectId, ChatMessage[]>>((acc, subject) => {
-    acc[subject.id] = [
-      {
-        role: 'assistant',
-        content: `${subject.label}の質問をどうぞ。分かりやすく一緒に解決していきましょう。`
-      }
-    ];
-    return acc;
-  }, {} as Record<SubjectId, ChatMessage[]>);
-}
-
-function buildStudentLabel(student: StudentProfile | null | undefined): string {
-  if (!student?.email) return '学習者';
-  const [localPart] = student.email.split('@');
-  return localPart || student.email;
-}
-
-function buildStudentInitial(student: StudentProfile | null | undefined): string {
-  const label = buildStudentLabel(student);
-  return label.charAt(0).toUpperCase();
-}
+type StudentProfile = {
+  email: string;
+  grade: number | null;
+  favoriteSubject: string | null;
+  mockExamScore: number | null;
+};
 
 interface ChatDashboardProps {
   student: StudentProfile;
+  subjectId: SubjectId;
 }
 
-export default function ChatDashboard({ student }: ChatDashboardProps) {
-  const [messagesBySubject, setMessagesBySubject] = useState<Record<SubjectId, ChatMessage[]>>(
-    createInitialMessages
+function buildInitialAssistantMessage(subject: SubjectConfig): string {
+  return `${subject.label}の質問をどうぞ。分かりやすく一緒に解決していきましょう。`;
+}
+
+export default function ChatDashboard({ student: _student, subjectId }: ChatDashboardProps) {
+  const subjectConfig = useMemo(
+    () => getSubjectConfig(subjectId) ?? SUBJECT_CONFIGS[0],
+    [subjectId]
   );
-  const [activeSubjectId, setActiveSubjectId] = useState<SubjectId>(SUBJECTS[0].id);
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
+    {
+      role: 'assistant',
+      content: buildInitialAssistantMessage(subjectConfig)
+    }
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const activeSubject = useMemo(
-    () => SUBJECTS.find((subject) => subject.id === activeSubjectId) ?? SUBJECTS[0],
-    [activeSubjectId]
-  );
-
-  const messages = messagesBySubject[activeSubject.id] ?? [];
-
-  const handleSubjectChange = (subjectId: SubjectId) => {
-    setActiveSubjectId(subjectId);
-    setError('');
+  useEffect(() => {
+    setMessages([
+      {
+        role: 'assistant',
+        content: buildInitialAssistantMessage(subjectConfig)
+      }
+    ]);
     setInput('');
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/logout', { method: 'POST' });
-    } catch (logoutError) {
-      console.error('Failed to logout', logoutError);
-    } finally {
-      window.location.href = '/login';
-    }
-  };
+    setError('');
+  }, [subjectConfig]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -138,15 +67,12 @@ export default function ChatDashboard({ student }: ChatDashboardProps) {
     const userMessage: ChatMessage = { role: 'user', content: prompt };
 
     const history = messages
-      .filter((message, index) => !(index === INITIAL_ASSISTANT_INDEX && message.role === 'assistant'))
+      .filter((message, index) => !(index === 0 && message.role === 'assistant'))
       .map(({ role, content }) => ({ role, content }));
 
     const nextMessages = [...messages, userMessage];
 
-    setMessagesBySubject((prev) => ({
-      ...prev,
-      [activeSubject.id]: nextMessages
-    }));
+    setMessages(nextMessages);
     setInput('');
     setError('');
     setIsLoading(true);
@@ -158,8 +84,8 @@ export default function ChatDashboard({ student }: ChatDashboardProps) {
         body: JSON.stringify({
           prompt,
           history,
-          context: activeSubject.context,
-          subject: activeSubject.id
+          context: subjectConfig.context,
+          subject: subjectConfig.id
         })
       });
 
@@ -175,101 +101,51 @@ export default function ChatDashboard({ student }: ChatDashboardProps) {
         content: assistantContent || 'I ran into an issue generating a response—please try again.'
       };
 
-      setMessagesBySubject((prev) => ({
-        ...prev,
-        [activeSubject.id]: [...nextMessages, assistantMessage]
-      }));
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Something went wrong.');
-      setMessagesBySubject((prev) => ({
-        ...prev,
-        [activeSubject.id]: messages
-      }));
+      setMessages(messages);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="page">
-      <section className="chat-panel">
-        <header className="chat-header">
-          <div className="header-row">
-            <div>
-              <h1>Withstady Tutor</h1>
-              <p>5教科のタブを切り替えて、それぞれの専門チューターに質問しましょう。</p>
-            </div>
-            <div className="user-chip">
-              <div className="user-meta">
-                <span className="user-name">{buildStudentLabel(student)}</span>
-                <span className="user-grade">
-                  中学{student.grade}年生 ・ {SUBJECT_LABELS[student.favoriteSubject as SubjectId] || '得意教科未設定'}
-                </span>
-              </div>
-              <div className="user-actions">
-                <Link href="/profile" className="account-button" aria-label="プロフィールを編集">
-                  <span aria-hidden>{buildStudentInitial(student)}</span>
-                </Link>
-                <button type="button" onClick={handleLogout} className="logout-button">
-                  ログアウト
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <nav className="tab-list" aria-label="教科のチューターを選択">
-          {SUBJECTS.map((subject) => {
-            const isActive = subject.id === activeSubject.id;
-            return (
-              <button
-                key={subject.id}
-                type="button"
-                className={`tab-button${isActive ? ' active' : ''}`}
-                onClick={() => handleSubjectChange(subject.id)}
-                disabled={isLoading && isActive}
-              >
-                {subject.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        <p className="subject-description">{activeSubject.description}</p>
-
-        <div className="chat-history" aria-live="polite">
-          {messages.map((message, index) => (
-            <article
-              key={`${activeSubject.id}-${message.role}-${index}`}
-              className={`chat-bubble ${message.role}`}
-            >
-              <span className="chat-role">{message.role === 'user' ? 'You' : 'Tutor'}</span>
-              <p>{message.content}</p>
-            </article>
-          ))}
+    <section className="chat-panel">
+      <header className="chat-header">
+        <div>
+          <h1>{subjectConfig.label} チューター</h1>
+          <p>{subjectConfig.description}</p>
         </div>
+      </header>
 
-        <form className="chat-form" onSubmit={handleSubmit}>
-          <label className="chat-label" htmlFor="question-input">
-            {activeSubject.label}の質問を入力
-          </label>
-          <div className="chat-controls">
-            <textarea
-              id="question-input"
-              name="question"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="気になる問題や用語の意味を聞いてみましょう"
-              rows={3}
-              required
-            />
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Thinking…' : 'Send'}
-            </button>
-          </div>
-          {error ? <p className="chat-error">{error}</p> : null}
-        </form>
-      </section>
-    </main>
+      <div className="chat-history" role="log" aria-live="polite">
+        {messages.map((message, index) => (
+          <article key={`${message.role}-${index}`} className={`chat-bubble ${message.role}`}>
+            <p>{message.content}</p>
+          </article>
+        ))}
+      </div>
+
+      <form className="chat-form" onSubmit={handleSubmit}>
+        <label className="chat-label" htmlFor="chat-prompt">
+          {subjectConfig.label}の質問を入力
+        </label>
+        <div className="chat-controls">
+          <textarea
+            id="chat-prompt"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder={`${subjectConfig.label}の質問を書いてください。`}
+            rows={3}
+            disabled={isLoading}
+          />
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? '送信中…' : '送信'}
+          </button>
+        </div>
+        {error ? <p className="chat-error">{error}</p> : null}
+      </form>
+    </section>
   );
 }

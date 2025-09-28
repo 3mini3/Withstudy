@@ -101,7 +101,7 @@ export async function loginAction(prevState: unknown, formData: FormData): Promi
 
   await ensureStudentContextDocument(student);
 
-  redirect('/');
+  redirect('/student/dashboard');
 }
 
 function parseSessionEmail(sessionValue: string): string {
@@ -169,5 +169,5 @@ export async function updateProfileAction(prevState: unknown, formData: FormData
 
   await ensureStudentContextDocument(updatedStudent);
 
-  redirect('/');
+  redirect('/student/dashboard');
 }
