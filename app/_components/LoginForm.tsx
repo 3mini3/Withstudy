@@ -4,10 +4,14 @@ import Link from 'next/link';
 import { useFormState } from 'react-dom';
 import { loginAction } from '../_actions/authenticate';
 
-const INITIAL_STATE = { error: '' };
+type LoginFormState = {
+  error?: string;
+};
+
+const INITIAL_STATE: LoginFormState = {};
 
 export default function LoginForm() {
-  const [state, formAction] = useFormState(loginAction, INITIAL_STATE);
+  const [state, formAction] = useFormState<LoginFormState, FormData>(loginAction, INITIAL_STATE);
 
   return (
     <main className="page auth-page">

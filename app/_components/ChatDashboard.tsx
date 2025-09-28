@@ -1,9 +1,37 @@
 'use client';
 
 import Link from 'next/link';
+import type { FormEvent } from 'react';
 import { useMemo, useState } from 'react';
+import { SUBJECT_LABELS, type SubjectId } from '../../lib/studentContext';
 
-const SUBJECTS = [
+interface StudentProfile {
+  email: string;
+  grade: number | null;
+  favoriteSubject: string | null;
+  mockExamScore: number | null;
+}
+
+interface SubjectConfig {
+  id: SubjectId;
+  label: string;
+  description: string;
+  context: string;
+}
+
+type ChatMessageRole = 'assistant' | 'user';
+
+interface ChatMessage {
+  role: ChatMessageRole;
+  content: string;
+}
+
+interface ChatApiResponse {
+  message?: string;
+  error?: string;
+}
+
+const SUBJECTS: SubjectConfig[] = [
   {
     id: 'math',
     label: '数学',
@@ -41,49 +69,40 @@ const SUBJECTS = [
   }
 ];
 
-const SUBJECT_LABELS = {
-  math: '数学',
-  science: '理科',
-  english: '英語',
-  'social-studies': '社会',
-  japanese: '国語'
-};
-
-const INITIAL_MESSAGES_BY_SUBJECT = SUBJECTS.reduce((acc, subject) => {
-  acc[subject.id] = [
-    {
-      role: 'assistant',
-      content: `${subject.label}の質問をどうぞ。分かりやすく一緒に解決していきましょう。`
-    }
-  ];
-  return acc;
-}, {});
-
 const INITIAL_ASSISTANT_INDEX = 0;
 
-function buildStudentLabel(student) {
-  if (!student?.email) return '学習者';
-  const email = student.email;
-  const [localPart] = email.split('@');
-  return localPart || email;
+function createInitialMessages(): Record<SubjectId, ChatMessage[]> {
+  return SUBJECTS.reduce<Record<SubjectId, ChatMessage[]>>((acc, subject) => {
+    acc[subject.id] = [
+      {
+        role: 'assistant',
+        content: `${subject.label}の質問をどうぞ。分かりやすく一緒に解決していきましょう。`
+      }
+    ];
+    return acc;
+  }, {} as Record<SubjectId, ChatMessage[]>);
 }
 
-function buildStudentInitial(student) {
+function buildStudentLabel(student: StudentProfile | null | undefined): string {
+  if (!student?.email) return '学習者';
+  const [localPart] = student.email.split('@');
+  return localPart || student.email;
+}
+
+function buildStudentInitial(student: StudentProfile | null | undefined): string {
   const label = buildStudentLabel(student);
   return label.charAt(0).toUpperCase();
 }
 
-const SUBJECT_LABELS = {
-  math: '数学',
-  science: '理科',
-  english: '英語',
-  'social-studies': '社会',
-  japanese: '国語'
-};
+interface ChatDashboardProps {
+  student: StudentProfile;
+}
 
-export default function ChatDashboard({ student }) {
-  const [messagesBySubject, setMessagesBySubject] = useState(INITIAL_MESSAGES_BY_SUBJECT);
-  const [activeSubjectId, setActiveSubjectId] = useState(SUBJECTS[0].id);
+export default function ChatDashboard({ student }: ChatDashboardProps) {
+  const [messagesBySubject, setMessagesBySubject] = useState<Record<SubjectId, ChatMessage[]>>(
+    createInitialMessages
+  );
+  const [activeSubjectId, setActiveSubjectId] = useState<SubjectId>(SUBJECTS[0].id);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -95,7 +114,7 @@ export default function ChatDashboard({ student }) {
 
   const messages = messagesBySubject[activeSubject.id] ?? [];
 
-  const handleSubjectChange = (subjectId) => {
+  const handleSubjectChange = (subjectId: SubjectId) => {
     setActiveSubjectId(subjectId);
     setError('');
     setInput('');
@@ -104,19 +123,19 @@ export default function ChatDashboard({ student }) {
   const handleLogout = async () => {
     try {
       await fetch('/api/logout', { method: 'POST' });
-    } catch (error) {
-      console.error('Failed to logout', error);
+    } catch (logoutError) {
+      console.error('Failed to logout', logoutError);
     } finally {
       window.location.href = '/login';
     }
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const prompt = input.trim();
     if (!prompt || isLoading) return;
 
-    const userMessage = { role: 'user', content: prompt };
+    const userMessage: ChatMessage = { role: 'user', content: prompt };
 
     const history = messages
       .filter((message, index) => !(index === INITIAL_ASSISTANT_INDEX && message.role === 'assistant'))
@@ -144,14 +163,14 @@ export default function ChatDashboard({ student }) {
         })
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as ChatApiResponse;
 
       if (!response.ok) {
         throw new Error(data?.error || 'The tutor is unavailable right now.');
       }
 
       const assistantContent = data?.message?.trim();
-      const assistantMessage = {
+      const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: assistantContent || 'I ran into an issue generating a response—please try again.'
       };
@@ -160,8 +179,8 @@ export default function ChatDashboard({ student }) {
         ...prev,
         [activeSubject.id]: [...nextMessages, assistantMessage]
       }));
-    } catch (err) {
-      setError(err.message || 'Something went wrong.');
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Something went wrong.');
       setMessagesBySubject((prev) => ({
         ...prev,
         [activeSubject.id]: messages
@@ -184,7 +203,7 @@ export default function ChatDashboard({ student }) {
               <div className="user-meta">
                 <span className="user-name">{buildStudentLabel(student)}</span>
                 <span className="user-grade">
-                  中学{student.grade}年生 ・ {SUBJECT_LABELS[student.favoriteSubject] || '得意教科未設定'}
+                  中学{student.grade}年生 ・ {SUBJECT_LABELS[student.favoriteSubject as SubjectId] || '得意教科未設定'}
                 </span>
               </div>
               <div className="user-actions">

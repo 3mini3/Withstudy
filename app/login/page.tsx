@@ -1,8 +1,9 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import LoginForm from '../_components/LoginForm';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'ログイン | Withstady Tutor'
 };
 
@@ -11,7 +12,7 @@ export default function LoginPage() {
 
   if (sessionCookie?.value) {
     try {
-      const parsed = JSON.parse(sessionCookie.value);
+      const parsed = JSON.parse(sessionCookie.value) as { email?: unknown };
       if (typeof parsed?.email === 'string' && parsed.email.trim()) {
         redirect('/');
       }

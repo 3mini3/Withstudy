@@ -4,12 +4,29 @@ import { cookies } from 'next/headers';
 import prisma from '../../lib/prisma';
 import { ensureStudentContextDocument } from '../../lib/studentContext';
 
-function getSessionEmail() {
+type ActionError = { error: string };
+type ActionSuccess = { success: string };
+
+type SaveState = ActionError | ActionSuccess | void;
+type RegenerateState = ActionError | (ActionSuccess & { content?: string | null }) | void;
+
+type StudentWithContext = NonNullable<
+  Awaited<
+    ReturnType<typeof prisma.student.findUnique>
+  >
+>;
+
+type LoadResult = {
+  content: string;
+  student: StudentWithContext;
+};
+
+function getSessionEmail(): string | null {
   const sessionCookie = cookies().get('withstady-session');
   if (!sessionCookie?.value) return null;
 
   try {
-    const parsed = JSON.parse(sessionCookie.value);
+    const parsed = JSON.parse(sessionCookie.value) as { email?: unknown };
     if (typeof parsed?.email === 'string' && parsed.email.trim()) {
       return parsed.email.trim().toLowerCase();
     }
@@ -20,7 +37,7 @@ function getSessionEmail() {
   return null;
 }
 
-export async function loadContextDocument() {
+export async function loadContextDocument(): Promise<LoadResult> {
   const email = getSessionEmail();
   if (!email) {
     throw new Error('ログインが必要です。');
@@ -43,7 +60,7 @@ export async function loadContextDocument() {
   };
 }
 
-export async function saveContextDocumentAction(prevState, formData) {
+export async function saveContextDocumentAction(prevState: unknown, formData: FormData): Promise<SaveState> {
   const email = getSessionEmail();
 
   if (!email) {
@@ -69,7 +86,7 @@ export async function saveContextDocumentAction(prevState, formData) {
   return { success: 'パーソナライズドドキュメントを保存しました。' };
 }
 
-export async function regenerateContextDocumentAction() {
+export async function regenerateContextDocumentAction(): Promise<RegenerateState> {
   const email = getSessionEmail();
 
   if (!email) {

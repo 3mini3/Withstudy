@@ -1,27 +1,44 @@
 import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/prisma';
-import { ensureStudentContextDocument } from '../../../lib/studentContext';
-import { generateTutorReply } from './chatbot';
+import { ensureStudentContextDocument, SUBJECT_LABELS } from '../../../lib/studentContext';
+import type { SubjectId } from '../../../lib/studentContext';
+import {
+  generateTutorReply,
+  isTutorHistoryMessage,
+  type TutorHistoryMessage,
+  type TutorUsage
+} from './chatbot';
 
-const SUBJECT_OPTIONS = new Set(['math', 'science', 'english', 'social-studies', 'japanese']);
+const SUBJECT_OPTIONS = new Set<SubjectId>(Object.keys(SUBJECT_LABELS) as SubjectId[]);
 
-export async function POST(request) {
-  let payload;
+interface ChatPayload {
+  prompt?: unknown;
+  history?: unknown;
+  context?: unknown;
+  subject?: unknown;
+}
+
+export async function POST(request: NextRequest) {
+  let payload: ChatPayload;
 
   try {
-    payload = await request.json();
+    payload = (await request.json()) as ChatPayload;
   } catch (error) {
     return NextResponse.json({ error: 'Invalid JSON payload.' }, { status: 400 });
   }
 
-  const { prompt, history = [], context, subject } = payload || {};
+  const prompt = typeof payload.prompt === 'string' ? payload.prompt : '';
+  const historyInput = Array.isArray(payload.history) ? payload.history : [];
+  const context = typeof payload.context === 'string' ? payload.context : undefined;
+  const subject = typeof payload.subject === 'string' ? payload.subject : '';
 
-  if (typeof prompt !== 'string' || !prompt.trim()) {
+  if (!prompt.trim()) {
     return NextResponse.json({ error: 'Provide a prompt for the tutor.' }, { status: 400 });
   }
 
-  if (!subject || !SUBJECT_OPTIONS.has(subject)) {
+  if (!subject || !SUBJECT_OPTIONS.has(subject as SubjectId)) {
     return NextResponse.json({ error: 'A valid subject identifier is required.' }, { status: 400 });
   }
 
@@ -32,7 +49,7 @@ export async function POST(request) {
 
   let email = '';
   try {
-    const parsed = JSON.parse(sessionCookie.value);
+    const parsed = JSON.parse(sessionCookie.value) as { email?: unknown };
     if (typeof parsed?.email === 'string' && parsed.email.trim()) {
       email = parsed.email.trim().toLowerCase();
     }
@@ -90,7 +107,7 @@ export async function POST(request) {
     }
   });
 
-  const dailyUpdateBase = {
+  const dailyUpdateBase: Parameters<typeof prisma.dailyStudentMetric.upsert>[0]['update'] = {
     userMessagesCount: { increment: 1 },
     lastCalculatedAt: new Date()
   };
@@ -122,12 +139,15 @@ export async function POST(request) {
   });
 
   try {
-    const combinedContext = [personalizedContext, context].filter(Boolean).join('\n\n');
+    const historyMessages = historyInput.filter(isTutorHistoryMessage) as TutorHistoryMessage[];
+    const combinedContext = [personalizedContext, context]
+      .filter((segment): segment is string => typeof segment === 'string' && segment.trim().length > 0)
+      .join('\n\n');
 
     const { message: reply, usage } = await generateTutorReply({
       prompt,
-      history,
-      context: combinedContext
+      history: historyMessages,
+      context: combinedContext || null
     });
 
     if (!reply) {
@@ -139,11 +159,12 @@ export async function POST(request) {
       );
     }
 
+    const usageMetrics = usage as TutorUsage | null;
     const tokenEstimate =
-      typeof usage?.total_tokens === 'number'
-        ? usage.total_tokens
-        : typeof usage?.completion_tokens === 'number'
-        ? usage.completion_tokens
+      typeof usageMetrics?.total_tokens === 'number'
+        ? usageMetrics.total_tokens
+        : typeof usageMetrics?.completion_tokens === 'number'
+        ? usageMetrics.completion_tokens
         : null;
 
     await prisma.chatMessage.create({
@@ -173,7 +194,7 @@ export async function POST(request) {
       );
     }
 
-    const durationIncrementData = {
+    const durationIncrementData: Parameters<typeof prisma.dailyStudentMetric.update>[0]['data'] = {
       assistantMessagesCount: { increment: 1 },
       totalDurationSeconds: { increment: incrementalDurationSeconds },
       lastCalculatedAt: new Date()
@@ -196,7 +217,7 @@ export async function POST(request) {
 
     return NextResponse.json({ message: reply });
   } catch (error) {
-    const errorMessage = error?.message || 'Unexpected error while contacting Groq.';
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error while contacting Groq.';
 
     if (errorMessage.includes('GROQ_API_KEY')) {
       return NextResponse.json({ error: errorMessage }, { status: 500 });

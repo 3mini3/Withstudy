@@ -2,20 +2,28 @@
 
 import Link from 'next/link';
 import { useFormState } from 'react-dom';
+import { SUBJECT_LABELS } from '../../lib/studentContext';
 import { updateProfileAction } from '../_actions/authenticate';
 
-const INITIAL_STATE = { error: '' };
-
-const SUBJECT_LABELS = {
-  math: '数学',
-  science: '理科',
-  english: '英語',
-  'social-studies': '社会',
-  japanese: '国語'
+type ProfileFormState = {
+  error?: string;
 };
 
-export default function ProfileForm({ student }) {
-  const [state, formAction] = useFormState(updateProfileAction, INITIAL_STATE);
+type StudentProfile = {
+  email: string;
+  grade: number | null;
+  favoriteSubject: string | null;
+  mockExamScore: number | null;
+};
+
+const INITIAL_STATE: ProfileFormState = {};
+
+interface ProfileFormProps {
+  student: StudentProfile;
+}
+
+export default function ProfileForm({ student }: ProfileFormProps) {
+  const [state, formAction] = useFormState<ProfileFormState, FormData>(updateProfileAction, INITIAL_STATE);
 
   return (
     <main className="page profile-page">

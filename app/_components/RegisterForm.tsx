@@ -4,10 +4,14 @@ import Link from 'next/link';
 import { useFormState } from 'react-dom';
 import { registerAction } from '../_actions/authenticate';
 
-const INITIAL_STATE = { error: '' };
+type RegisterFormState = {
+  error?: string;
+};
+
+const INITIAL_STATE: RegisterFormState = {};
 
 export default function RegisterForm() {
-  const [state, formAction] = useFormState(registerAction, INITIAL_STATE);
+  const [state, formAction] = useFormState<RegisterFormState, FormData>(registerAction, INITIAL_STATE);
 
   return (
     <main className="page auth-page">

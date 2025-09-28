@@ -1,18 +1,30 @@
+import type { Student, StudentContextDocument } from '@prisma/client';
 import prisma from './prisma';
 
-const SUBJECT_LABELS = {
+export const SUBJECT_LABELS = {
   math: '数学',
   science: '理科',
   english: '英語',
   'social-studies': '社会',
   japanese: '国語'
-};
+} as const;
+
+export type SubjectId = keyof typeof SUBJECT_LABELS;
 
 const AUTO_SECTION_START = '<!-- AUTO-CONTEXT-START -->';
 const AUTO_SECTION_END = '<!-- AUTO-CONTEXT-END -->';
 
-function formatGrade(grade) {
-  if (!grade) return '学年未設定';
+type StudentWithOptionalContext = Pick<
+  Student,
+  'email' | 'grade' | 'favoriteSubject' | 'mockExamScore'
+> & {
+  contextDocument?: StudentContextDocument | null;
+};
+
+type MaybeStudent = StudentWithOptionalContext | null | undefined;
+
+function formatGrade(grade: StudentWithOptionalContext['grade']): string {
+  if (grade == null) return '学年未設定';
   const gradeNumber = Number(grade);
   if (Number.isNaN(gradeNumber) || gradeNumber < 1 || gradeNumber > 3) {
     return '学年未設定';
@@ -20,22 +32,22 @@ function formatGrade(grade) {
   return `中学${gradeNumber}年生`;
 }
 
-function formatSubject(subject) {
-  if (!subject || !SUBJECT_LABELS[subject]) return '未設定';
-  return SUBJECT_LABELS[subject];
+function formatSubject(subject: StudentWithOptionalContext['favoriteSubject']): string {
+  if (!subject || !SUBJECT_LABELS[subject as SubjectId]) return '未設定';
+  return SUBJECT_LABELS[subject as SubjectId];
 }
 
-function formatMockScore(score) {
+function formatMockScore(score: StudentWithOptionalContext['mockExamScore']): string {
   if (typeof score !== 'number' || Number.isNaN(score)) {
     return '未入力';
   }
   return `${score}/100`;
 }
 
-export function buildPersonalizedContextDocument(student) {
-  const gradeLabel = formatGrade(student?.grade);
-  const subjectLabel = formatSubject(student?.favoriteSubject);
-  const mockScoreLabel = formatMockScore(student?.mockExamScore);
+export function buildPersonalizedContextDocument(student: MaybeStudent): string {
+  const gradeLabel = formatGrade(student?.grade ?? null);
+  const subjectLabel = formatSubject(student?.favoriteSubject ?? null);
+  const mockScoreLabel = formatMockScore(student?.mockExamScore ?? null);
 
   const guidanceLines = [
     `- ${gradeLabel} に合わせて、段階的で理解しやすい説明を提供する。`,
@@ -54,11 +66,11 @@ export function buildPersonalizedContextDocument(student) {
   ].join('\n');
 }
 
-function buildAutoSection(content) {
+function buildAutoSection(content: string): string {
   return `${AUTO_SECTION_START}\n${content}\n${AUTO_SECTION_END}`;
 }
 
-function mergeManualAndAuto(existingContent, autoSection) {
+function mergeManualAndAuto(existingContent: string | null | undefined, autoSection: string): string {
   const current = (existingContent || '').trim();
   if (!current) {
     return autoSection;
@@ -74,7 +86,7 @@ function mergeManualAndAuto(existingContent, autoSection) {
     const before = current.slice(0, startIndex).trimEnd();
     const after = current.slice(endIndex + AUTO_SECTION_END.length).trimStart();
 
-    const parts = [];
+    const parts: string[] = [];
     if (before) parts.push(before);
     parts.push(autoSection);
     if (after) parts.push(after);
@@ -84,7 +96,10 @@ function mergeManualAndAuto(existingContent, autoSection) {
   return `${current}\n\n${autoSection}`;
 }
 
-async function getContextDocument(studentEmail, includeExisting) {
+async function getContextDocument(
+  studentEmail: string,
+  includeExisting?: StudentContextDocument | null
+): Promise<StudentContextDocument | null> {
   if (includeExisting?.content) {
     return includeExisting;
   }
@@ -94,7 +109,10 @@ async function getContextDocument(studentEmail, includeExisting) {
   });
 }
 
-export async function ensureStudentContextDocument(student, { forceRegenerate = false } = {}) {
+export async function ensureStudentContextDocument(
+  student: MaybeStudent,
+  { forceRegenerate = false }: { forceRegenerate?: boolean } = {}
+): Promise<string | null> {
   if (!student?.email) {
     return null;
   }
@@ -147,4 +165,4 @@ export async function ensureStudentContextDocument(student, { forceRegenerate = 
   return updatedDoc.content;
 }
 
-export { SUBJECT_LABELS, AUTO_SECTION_START, AUTO_SECTION_END };
+export { AUTO_SECTION_START, AUTO_SECTION_END };

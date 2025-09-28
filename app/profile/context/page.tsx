@@ -1,10 +1,11 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import prisma from '../../../lib/prisma';
 import ContextEditorForm from '../../_components/ContextEditorForm';
 import { ensureStudentContextDocument } from '../../../lib/studentContext';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'パーソナライズドドキュメント | Withstady Tutor'
 };
 
@@ -17,7 +18,7 @@ export default async function ContextEditorPage() {
 
   let email = '';
   try {
-    const parsed = JSON.parse(sessionCookie.value);
+    const parsed = JSON.parse(sessionCookie.value) as { email?: unknown };
     if (typeof parsed?.email === 'string' && parsed.email.trim()) {
       email = parsed.email.trim().toLowerCase();
     }

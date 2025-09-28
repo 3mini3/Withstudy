@@ -1,17 +1,29 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useTransition } from 'react';
 import { useFormState } from 'react-dom';
-import { saveContextDocumentAction, regenerateContextDocumentAction } from '../_actions/contextDocument';
-import { useTransition, useState } from 'react';
+import { regenerateContextDocumentAction, saveContextDocumentAction } from '../_actions/contextDocument';
 
-const INITIAL_STATE = { error: '', success: '' };
+type ContextEditorState = {
+  error?: string;
+  success?: string;
+};
+
+interface ContextEditorFormProps {
+  initialContent?: string;
+}
+
+const INITIAL_STATE: ContextEditorState = {};
 
 const regenerateAction = regenerateContextDocumentAction.bind(null);
 
-export default function ContextEditorForm({ initialContent }) {
-  const [state, formAction] = useFormState(saveContextDocumentAction, INITIAL_STATE);
-  const [content, setContent] = useState(initialContent || '');
+export default function ContextEditorForm({ initialContent = '' }: ContextEditorFormProps) {
+  const [state, formAction] = useFormState<ContextEditorState, FormData>(
+    saveContextDocumentAction,
+    INITIAL_STATE
+  );
+  const [content, setContent] = useState(initialContent);
   const [isPending, startTransition] = useTransition();
   const [regenerateMessage, setRegenerateMessage] = useState('');
 

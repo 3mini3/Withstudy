@@ -1,22 +1,29 @@
 'use server';
 
+import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import bcrypt from 'bcryptjs';
 import prisma from '../../lib/prisma';
-import { ensureStudentContextDocument } from '../../lib/studentContext';
+import { ensureStudentContextDocument, SUBJECT_LABELS } from '../../lib/studentContext';
+import type { SubjectId } from '../../lib/studentContext';
 
-const SUBJECT_OPTIONS = new Set(['math', 'science', 'english', 'social-studies', 'japanese']);
+type ActionError = { error: string };
 
-function sanitizeEmail(value) {
+type RegisterState = ActionError | void;
+type LoginState = ActionError | void;
+type UpdateProfileState = ActionError | void;
+
+const SUBJECT_OPTIONS = new Set<SubjectId>(Object.keys(SUBJECT_LABELS) as SubjectId[]);
+
+function sanitizeEmail(value: FormDataEntryValue | null): string {
   return value?.toString().trim().toLowerCase() || '';
 }
 
-function sanitizePassword(value) {
+function sanitizePassword(value: FormDataEntryValue | null): string {
   return value?.toString() || '';
 }
 
-export async function registerAction(prevState, formData) {
+export async function registerAction(prevState: unknown, formData: FormData): Promise<RegisterState> {
   const email = sanitizeEmail(formData.get('email'));
   const password = sanitizePassword(formData.get('password'));
   const confirmPassword = sanitizePassword(formData.get('confirmPassword'));
@@ -59,7 +66,7 @@ export async function registerAction(prevState, formData) {
   redirect('/profile');
 }
 
-export async function loginAction(prevState, formData) {
+export async function loginAction(prevState: unknown, formData: FormData): Promise<LoginState> {
   const email = sanitizeEmail(formData.get('email'));
   const password = sanitizePassword(formData.get('password'));
 
@@ -88,7 +95,7 @@ export async function loginAction(prevState, formData) {
     maxAge: 60 * 60 * 24 * 7
   });
 
-  if (!student.grade || !student.favoriteSubject) {
+  if (student.grade == null || student.favoriteSubject == null) {
     redirect('/profile');
   }
 
@@ -97,22 +104,27 @@ export async function loginAction(prevState, formData) {
   redirect('/');
 }
 
-export async function updateProfileAction(prevState, formData) {
+function parseSessionEmail(sessionValue: string): string {
+  try {
+    const parsed = JSON.parse(sessionValue) as { email?: unknown };
+    if (typeof parsed?.email === 'string' && parsed.email.trim()) {
+      return parsed.email.trim().toLowerCase();
+    }
+  } catch (error) {
+    // fall through to empty string below
+  }
+
+  return '';
+}
+
+export async function updateProfileAction(prevState: unknown, formData: FormData): Promise<UpdateProfileState> {
   const sessionCookie = cookies().get('withstady-session');
 
   if (!sessionCookie?.value) {
     return { error: 'ログインが必要です。' };
   }
 
-  let email = '';
-  try {
-    const parsed = JSON.parse(sessionCookie.value);
-    if (typeof parsed?.email === 'string' && parsed.email.trim()) {
-      email = parsed.email.trim().toLowerCase();
-    }
-  } catch (error) {
-    return { error: 'セッション情報の取得に失敗しました。' };
-  }
+  const email = parseSessionEmail(sessionCookie.value);
 
   if (!email) {
     return { error: 'ログインが必要です。' };
@@ -132,7 +144,7 @@ export async function updateProfileAction(prevState, formData) {
     return { error: '学年は1〜3の数字で入力してください。' };
   }
 
-  if (!favoriteSubject || !SUBJECT_OPTIONS.has(favoriteSubject)) {
+  if (!favoriteSubject || !SUBJECT_OPTIONS.has(favoriteSubject as SubjectId)) {
     return { error: '得意教科を選択してください。' };
   }
 

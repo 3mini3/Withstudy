@@ -1,7 +1,10 @@
+import type { Student } from '@prisma/client';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import ChatDashboard from './_components/ChatDashboard';
 import prisma from '../lib/prisma';
+
+type ClientStudent = Pick<Student, 'email' | 'grade' | 'favoriteSubject' | 'mockExamScore'>;
 
 export default async function HomePage() {
   const sessionCookie = cookies().get('withstady-session');
@@ -12,7 +15,7 @@ export default async function HomePage() {
 
   let email = '';
   try {
-    const parsed = JSON.parse(sessionCookie.value);
+    const parsed = JSON.parse(sessionCookie.value) as { email?: unknown };
     if (typeof parsed?.email === 'string' && parsed.email.trim()) {
       email = parsed.email.trim().toLowerCase();
     }
@@ -30,11 +33,11 @@ export default async function HomePage() {
     redirect('/login');
   }
 
-  if (!student.grade || !student.favoriteSubject) {
+  if (student.grade == null || student.favoriteSubject == null) {
     redirect('/profile');
   }
 
-  const clientStudent = {
+  const clientStudent: ClientStudent = {
     email: student.email,
     grade: student.grade,
     favoriteSubject: student.favoriteSubject,
