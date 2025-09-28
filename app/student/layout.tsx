@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import prisma from '../../lib/prisma';
-import StudentNav from './_components/StudentNav';
+import StudentSidebar from './_components/StudentSidebar';
 
 interface StudentLayoutProps {
   children: ReactNode;
@@ -41,13 +41,7 @@ export default async function StudentLayout({ children }: StudentLayoutProps) {
 
   return (
     <div className="student-shell">
-      <aside className="student-sidebar" aria-label="学習メニュー">
-        <div className="student-sidebar-top">
-          <h1 className="student-logo">Withstady</h1>
-          <p className="student-tagline">学習を見える化しながら AI チューターと学び続けましょう。</p>
-        </div>
-        <StudentNav email={student.email} />
-      </aside>
+      <StudentSidebar email={student.email} />
       <main className="student-main">{children}</main>
     </div>
   );
