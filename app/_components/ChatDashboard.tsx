@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +41,40 @@ interface ChatDashboardProps {
   student: StudentProfile;
   subjectId: SubjectId;
 }
+
+const markdownComponents: Components = {
+  p: ({ children }) => <p className="whitespace-pre-wrap leading-relaxed">{children}</p>,
+  ul: ({ children }) => <ul className="ml-4 list-disc space-y-1">{children}</ul>,
+  ol: ({ children }) => <ol className="ml-4 list-decimal space-y-1">{children}</ol>,
+  li: ({ children }) => <li className="pl-1 leading-relaxed">{children}</li>,
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+  em: ({ children }) => <em className="italic">{children}</em>,
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="text-primary underline decoration-dotted underline-offset-4 hover:text-primary/80"
+    >
+      {children}
+    </a>
+  ),
+  code: ({ inline, children }) => {
+    if (inline) {
+      return (
+        <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[0.85rem]">
+          {children}
+        </code>
+      );
+    }
+
+    return (
+      <pre className="overflow-x-auto rounded-lg bg-muted/70 p-3 font-mono text-sm">
+        <code>{children}</code>
+      </pre>
+    );
+  }
+};
 
 function buildInitialAssistantMessage(subject: SubjectConfig): string {
   return `${subject.label}の質問をどうぞ。分かりやすく一緒に解決していきましょう。`;
@@ -138,7 +174,13 @@ export default function ChatDashboard({ student: _student, subjectId }: ChatDash
                   : 'ml-auto bg-primary text-primary-foreground'
               )}
             >
-              {message.content}
+              {message.role === 'assistant' ? (
+                <div className="space-y-2">
+                  <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              )}
             </div>
           ))}
         </div>

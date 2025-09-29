@@ -36,3 +36,6 @@
 - Provide `DATABASE_URL` in `.env.local` before running Prisma commands or the dev server.
 - Set `GROQ_API_KEY`, with optional `GROQ_MODEL` and `GROQ_SYSTEM_PROMPT`, to enable tutor replies in `app/api/chat/chatbot.ts`.
 - Run `npx prisma generate` after schema edits to refresh the client, and avoid logging secrets in server routes or utilities.
+
+# Mcp usage
+ - Use Serena for search file or scan directory.
